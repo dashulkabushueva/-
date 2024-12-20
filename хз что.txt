@@ -1,0 +1,128 @@
+//---------------------------------------------------------------------------
+
+#include <vcl.h>
+#pragma hdrstop
+
+#include "Unit2.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+TForm2 *Form2;
+
+//---------------------------------------------------------------------------
+__fastcall TForm2::TForm2(TComponent* Owner)
+    : TForm(Owner)
+{
+    Eqp = new Equip*[30];
+    Equip_count = 0;
+}
+
+//---------------------------------------------------------------------------
+void __fastcall TForm2::Button1Click(TObject *Sender)
+{
+	if (FileOpenDialog1->Execute())
+    {
+        AnsiString FileName = FileOpenDialog1->FileName;
+
+        FILE* file = fopen(FileName.c_str(), "rt");
+        if (file == NULL)
+        {
+			ShowMessage("Не удалось открыть файл :(");
+            return;
+        }
+
+        char line[1024];
+        AnsiString allData = ""; // Для вывода всех данных
+
+        while (fgets(line, sizeof(line), file))
+        {
+            char type[75], name[75];
+            int num = 0, cost = 0, count = 0, start_ex = 0, oper_time = 0;
+            int lumens = 0, efficiency = 0, baseEnergy = 0;
+            double temperatureDifference = 0.0;
+
+            memset(type, 0, sizeof(type));
+            memset(name, 0, sizeof(name));
+
+            AnsiString rawLine = AnsiString(line).Trim();
+
+            // Преобразуем строку к нижнему регистру для проверки типа
+            AnsiString lowerLine = rawLine.LowerCase();
+
+            if (lowerLine.SubString(1, 4) == "bulb")
+            {
+                int parsedCount = sscanf(line, "Bulb,%d,%d,%d,%d,%d,%d",
+                    &num, &count, &cost, &start_ex, &oper_time, &lumens);
+
+                if (parsedCount == 6)
+                {
+                    Eqp[Equip_count++] = new Bulb("Bulb", start_ex, oper_time, cost, count, num, lumens);
+                    allData += "Bulb: Num=" + IntToStr(num) + ", Cost=" + IntToStr(cost) +
+                               ", Count=" + IntToStr(count) + ", Lumens=" + IntToStr(lumens) + "\n";
+                }
+                else
+                {
+                    ShowMessage("Ошибка разбора строки: " + rawLine);
+                }
+            }
+            else if (lowerLine.SubString(1, 11) == "waterheater")
+            {
+                int parsedCount = sscanf(line, "Waterheater,%d,%d,%d,%d,%d,%d,%d",
+                    &num, &count, &cost, &start_ex, &oper_time, &efficiency, &baseEnergy);
+
+                if (parsedCount == 7)
+                {
+                    Eqp[Equip_count++] = new Waterheater("Waterheater", start_ex, oper_time, cost, count, num, efficiency, baseEnergy);
+                    allData += "Waterheater: Num=" + IntToStr(num) + ", Cost=" + IntToStr(cost) +
+                               ", Efficiency=" + IntToStr(efficiency) + ", BaseEnergy=" + IntToStr(baseEnergy) + "\n";
+                }
+                else
+                {
+                    ShowMessage("Ошибка разбора строки: " + rawLine);
+                }
+            }
+            else if (lowerLine.SubString(1, 11) == "conditioner")
+            {
+                int parsedCount = sscanf(line, "Conditioner,%d,%d,%d,%d,%d,%lf,%d",
+                    &num, &count, &cost, &start_ex, &oper_time, &temperatureDifference, &efficiency);
+
+                if (parsedCount == 7)
+                {
+                    Eqp[Equip_count++] = new Conditioner("Conditioner", start_ex, oper_time, cost, count, num, temperatureDifference, efficiency);
+                    allData += "Conditioner: Num=" + IntToStr(num) + ", Cost=" + IntToStr(cost) +
+                               ", TempDiff=" + FloatToStr(temperatureDifference) + ", Efficiency=" + IntToStr(efficiency) + "\n";
+                }
+                else
+                {
+                    ShowMessage("Ошибка разбора строки: " + rawLine);
+                }
+            }
+            else
+            {
+                ShowMessage("Неизвестный тип оборудования: " + rawLine);
+            }
+
+            if (Equip_count >= 30)
+			{ ShowMessage("Достигнут предел хранения (30 элементов).");
+                break;
+            }
+        }
+
+        fclose(file);
+
+        // Выводим все загруженные данные
+        if (allData.IsEmpty())
+        {
+            ShowMessage("Данные не были загружены.");
+        }
+        else
+        {
+            ShowMessage("Загруженные данные:\n" + allData);
+        }
+    }
+}
+void __fastcall TForm2::Button1Click(TObject *Sender)
+{
+	ZapolnenieListView()
+	{
+}
